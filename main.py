@@ -16,42 +16,44 @@ conn = sqlite3.connect('Employee.db')
 
 root = tk.Tk()
 root.title("emp")
-root.geometry("1920x1080")
-root.state("zoomed")
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
 
-root.grid_columnconfigure(0, weight=1)
+root.geometry(f"{screen_width}x{screen_height}")
+# Create a custom title bar
 
 
 def open_welcome_page():
     welcome_window = tk.Toplevel(root)
     welcome_window.title("Welcome Page")
+    welcome_window.config(bg="peach puff")
 
     # Customize the welcome page
-    welcome_label = tk.Label(welcome_window, text=f"Welcome, {username_var.get()}!")
+    welcome_label = tk.Label(welcome_window, text=f"Welcome, {username_var.get()}!", bg="peach puff")
     welcome_label.pack()
 
     # Frame for ID, Date, and Time-In
-    input_frame = tk.Frame(welcome_window)
-    input_frame.pack(pady=20)
+    input_frame = tk.Frame(welcome_window, bg="light blue")
+    input_frame.pack(pady=20, )
 
     # ID Entry
-    id_label = tk.Label(input_frame, text="Enter ID:")
+    id_label = tk.Label(input_frame, text="Enter ID:", bg="light blue")
     id_label.grid(row=1, column=1, padx=10, pady=5)
     id_entry = tk.Entry(input_frame)
     id_entry.grid(row=1, column=2, padx=10, pady=5)
 
     # Date Label
-    date_label = tk.Label(input_frame, text="Select Date:")
+    date_label = tk.Label(input_frame, text="Select Date:", bg="light blue")
     date_label.grid(row=3, column=1, padx=10, pady=5)
 
     # Date Entry using tkcalendar's DateEntry widget
-    date_entry = DateEntry(input_frame, date_pattern="yyyy-mm-dd")
+    date_entry = DateEntry(input_frame, date_pattern="yyyy-mm-dd", bg="light blue")
     date_entry.grid(row=3, column=2, padx=10, pady=5)
     # Destroy the calendar widget to clear the date selection
 
     # Time-In Entry (Using Spinbox)
     # Time-In Entry (Using Spinbox)
-    time_in_label = tk.Label(input_frame, text="Enter Time-In (hh:mm AM/PM):")
+    time_in_label = tk.Label(input_frame, text="Enter Time-In (hh:mm AM/PM):", bg="light blue")
     time_in_label.grid(row=1, column=3, padx=10, pady=5)
 
     # Create a Spinbox for time-in with 12-hour format and AM/PM
@@ -64,7 +66,7 @@ def open_welcome_page():
     time_in_spinbox.grid(row=2, column=3, padx=10, pady=5)
 
     # Time-Out Entry (Using Spinbox)
-    time_out_label = tk.Label(input_frame, text="Enter Time-Out (hh:mm AM/PM):")
+    time_out_label = tk.Label(input_frame, text="Enter Time-Out (hh:mm AM/PM):", bg="light blue")
     time_out_label.grid(row=3, column=3, padx=10, pady=5)
 
     # Create a Spinbox for time-out with 12-hour format and AM/PM
@@ -105,14 +107,14 @@ def open_welcome_page():
 
     # Clear time-out selection (set to default time)
 
-    enter_button = tk.Button(input_frame, text="Enter", command=enter_data)
-    enter_button.grid(row=5, column=2, padx=10, pady=10)
+    enter_button = tk.Button(input_frame, text="Enter", command=enter_data, bg="medium purple")
+    enter_button.grid(row=7, column=2, padx=10, pady=10)
 
     def logout():
         welcome_window.destroy()  # Close the welcome window
 
-    logout_button = tk.Button(input_frame, text="Logout", command=logout)
-    logout_button.grid(row=11, column=5, pady=10)
+    logout_button = tk.Button(input_frame, text="Logout", command=logout, bg="deep pink2")
+    logout_button.grid(row=7, column=3, pady=10)
 
 
 # Call the function to open the welcome page
@@ -130,7 +132,9 @@ def validate_login():
     if username == "ajith" and password == "ak":
         # Valid credentials for ajith and ak, open the main program
         root.deiconify()  # Show the main program window
-        open_main_program()  # Hide the login window
+        open_main_program()
+        login_window.withdraw()
+        # Hide the login window
     elif user_data:
         login_window.withdraw()
         open_welcome_page()
@@ -252,6 +256,8 @@ def open_main_program():
     def analyze_gender_distribution():
         # Ensure that 'df' is accessible within this function
         global df
+        conn = sqlite3.connect('Employee.db')
+
         selected_gender = gender.get()
         print("Selected Gender:", selected_gender)  # Add this line for debugging
         df = pd.read_sql_query("SELECT * FROM Employee", conn)
@@ -352,6 +358,18 @@ def open_main_program():
             # Get the list of columns in the DataFrame
             columns = df.columns.tolist()
 
+            # Get the existing table's column names
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(Employee)")
+            existing_columns = [column[1] for column in cursor.fetchall()]
+            cursor.close()
+
+            # Check if all columns in the DataFrame exist in the existing table
+            if not all(col in existing_columns for col in columns):
+                messagebox.showwarning("CSV Import Warning",
+                                       "The CSV file contains columns that do not match the table's columns.")
+                return  # Exit without importing if columns don't match
+
             # Create a table in the database with the same column names as in the CSV file
             create_table_sql = f"CREATE TABLE IF NOT EXISTS Employee ({', '.join([f'{col} TEXT' for col in columns])})"
             conn.execute(create_table_sql)
@@ -370,10 +388,8 @@ def open_main_program():
             messagebox.showerror("CSV Import Error", f"An error occurred: {str(e)}")
 
     # Create a button for importing CSV data
-    import_csv_button = ttk.Button(entries_frame, text="Import CSV Data", command=import_csv_file)
-    import_csv_button.place(x=1410, y=300)
 
-    def getData(event):
+    def getData(self):
         select_row = tv.focus()
         data = tv.item(select_row)
         global row
@@ -399,10 +415,6 @@ def open_main_program():
     message_label.grid(row=6, column=10, columnspan=4, rowspan=3, padx=20, pady=20, sticky="nsew")
 
     # Function to center the message label
-    def center_message_label():
-        x = (entries_frame.winfo_width() - message_label.winfo_reqwidth()) / 2
-        y = (entries_frame.winfo_height() - message_label.winfo_reqheight()) / 2
-        message_label.place(x=x, y=y)
 
     # Modify the displayAll function
     def displayAll():
@@ -517,7 +529,11 @@ def open_main_program():
 
     btClear = tk.Button(btFrame, text="Clear", command=clear_db, padx=10, pady=20, width=15, bg="grey", borderwidth=0)
     btClear.grid(row=0, column=3, padx=10)
+    # import csv code button
+    import_csv_button = ttk.Button(btFrame, text="Import CSV Data", command=import_csv_file)
+    import_csv_button.grid(row=0, column=4, padx=10)
 
+    #
     def refresh_data():
         # Clear the current data in the Treeview
         tv.delete(*tv.get_children())
@@ -525,7 +541,8 @@ def open_main_program():
         # Fetch and display the latest data from the database
         displayAll()
 
-    conn = sqlite3.connect('Employee.db')  # Replace 'your_database.db' with your database file
+    # Establish a connection to the SQLite database (replace 'Employee.db' with your database file)
+    conn = sqlite3.connect('Employee.db')
 
     # SQL query to fetch time series data
     Timeseries_query = "SELECT employee_id, time_in_stamp, time_out_stamp, year, month, day FROM Timeseries"
@@ -553,7 +570,7 @@ def open_main_program():
 
     # Define the time ranges
     normal_start = pd.Timestamp(year=2000, month=1, day=1, hour=8, minute=0, second=0, microsecond=0)
-    normal_end = pd.Timestamp(year=2000, month=1, day=1, hour=16, minute=0, second=0, microsecond=0)
+    pd.Timestamp(year=2000, month=1, day=1, hour=16, minute=0, second=0, microsecond=0)
 
     # Calculate work duration per employee per day
     df_Timeseries['work_duration'] = df_Timeseries['time_out_stamp'] - df_Timeseries['time_in_stamp']
@@ -567,8 +584,19 @@ def open_main_program():
         early_arrival=('time_in_stamp', lambda x: any(x <= normal_start)),
     ).reset_index()
 
-    # Create a function to display the chart plot
+    # Create the main Tkinter window
+
+    # Create a frame to contain the button and Combobox
+
+    # Create the "Track Employee Timings" button
     def display_chart_plot():
+        selected_employee = employee_var.get()
+
+        if selected_employee == "All Employees":
+            data_to_plot = df_work_status
+        else:
+            data_to_plot = df_work_status[df_work_status['employee_id'] == int(selected_employee)]
+
         # Create a new Toplevel window
         chart_window = tk.Toplevel(root)
         chart_window.title("Employee Work Hours Chart")
@@ -586,7 +614,7 @@ def open_main_program():
         # Define color coding based on conditions
         colors = []
         labels = []
-        for _, row in df_work_status.iterrows():
+        for _, row in data_to_plot.iterrows():
             if 0 <= row['total_work_hours'] <= 8:
                 colors.extend(['green', 'orange', 'red', 'blue'])
                 labels.extend(['0-8 hours', 'Overtime', 'Less than 8 hours', 'Early Arrival'])
@@ -601,13 +629,13 @@ def open_main_program():
                 labels.extend(['Less than 8 hours', '0-8 hours', 'Early Arrival', 'Overtime'])
 
         # Create grouped bars
-        ax.bar(df_work_status.index, df_work_status['total_work_hours'], color=colors)
+        ax.bar(data_to_plot.index, data_to_plot['total_work_hours'], color=colors)
         ax.set_xlabel('Employee and Date Index')
         ax.set_ylabel('Total Work Hours')
         ax.set_title('Employee Work Hours (Grouped Bar)')
-        ax.set_xticks(df_work_status.index)
+        ax.set_xticks(data_to_plot.index)
         ax.set_xticklabels([f"Emp {row['employee_id']}, {row['year']}-{row['month']}-{row['day']}" for _, row in
-                            df_work_status.iterrows()], rotation=90)
+                            data_to_plot.iterrows()], rotation=90)
         ax.legend(
             handles=[plt.Line2D([0], [0], color=color, lw=4, label=label) for color, label in zip(colors, labels)])
 
@@ -615,20 +643,29 @@ def open_main_program():
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
         canvas.get_tk_widget().pack()
 
-    # Create the main Tkinter window
+    lbtlabel = ttk.Label(entries_frame, text="Track employee time")
+    lbtlabel.place(x=1400, y=300)
 
+    # Create a Combobox (dropdown) for employee selection
+    employee_var = tk.StringVar()
+    employee_combobox = ttk.Combobox(entries_frame, textvariable=employee_var, width=27,
+                                     values=["All Employees"] + df_work_status['employee_id'].unique().tolist())
+    employee_combobox.place(x=1400, y=350)
 
+    # Bind the Combobox selection to display the chart
+    employee_combobox.bind("<<ComboboxSelected>>", display_chart_plot)
 
+    # Close the database connection
+    conn.close()
 
-    # Create the "Track Employee Timings" button
-    track_button = ttk.Button(entries_frame, text="Track Employee Timings", command=display_chart_plot)
-    track_button.grid(row=4, column=6, padx=10, pady=10, sticky="nsew")
+    # Start the main Tkinter event loop
 
+    # Start the main Tkinter event loop
 
     # Start the Tkinter main loop
 
     refresh_button = ttk.Button(btFrame, text="Refresh Data", command=refresh_data)
-    refresh_button.grid(row=0, column=4, padx=30, pady=10)
+    refresh_button.grid(row=0, column=5, padx=30, pady=10)
     refresh_button.config(command=refresh_data)
 
     # tabel formation frame
@@ -688,19 +725,20 @@ def open_main_program():
 
 login_window = tk.Toplevel(root)  # Create a Toplevel window for login
 login_window.title("Login")
-
+login_window.config(bg="peach puff")
 login_window.state("zoomed")
 # Create labels and entry widgets for username and password in the login window
-login_label = tk.Label(login_window, text="Login to EMS", font=("Arial", 20))
+login_label = tk.Label(login_window, text="LOGIN", font=("Arial black ", 22), bg="peach puff")
 login_label.pack(pady=20)
-
-username_label = tk.Label(login_window, text="Username")
+login_label = tk.Label(login_window, text="EMPLOYEE MANAGEMENT SYSTEM", font=("impact", 20), bg="peach puff")
+login_label.pack(pady=20)
+username_label = tk.Label(login_window, text="USERNAME", bg="peach puff", font=('segoe print', 14))
 username_label.pack()
 username_var = tk.StringVar()
 username_entry = tk.Entry(login_window, textvariable=username_var, width=30)
 username_entry.pack()
 
-password_label = tk.Label(login_window, text="Password")
+password_label = tk.Label(login_window, text="PASSWORD", bg="peach puff", font=("segoe print", 14))
 password_label.pack()
 password_var = tk.StringVar()
 password_entry = tk.Entry(login_window, textvariable=password_var, show="*", width=30)
