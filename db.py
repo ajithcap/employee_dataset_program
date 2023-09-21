@@ -19,8 +19,24 @@ class Database:
             password TEXT
         )"""
         self.cur.execute(sql)
-        self.con.commit()
+        # Create the TimeIn table
+        sql_times = """
+                CREATE TABLE IF NOT EXISTS Timeseries(
+                    employee_id INTEGER,
+                    time_in_stamp TEXT,
+                    time_out_stamp TEXT,
+                    year INTEGER,
+                    month INTEGER,
+                    day INTEGER,
+                    FOREIGN KEY (employee_id) REFERENCES Employee(id)
+                )"""
+        self.cur.execute(sql_times)
 
+
+        # Commit the changes and close the database connection
+
+
+        # Commit the changes and close the connectio
     def insert(self, name, age, gender, email, doj, contact, address, username, password):
         sql = ("INSERT INTO Employee (name, age, gender, email, doj, contact, address, username, password)"
                " VALUES (?,?,?,?,?,?,?,?,?)")
@@ -47,6 +63,16 @@ class Database:
         updated_values = (name, age, gender, email, doj, contact, address, username, password, id)
         self.cur.execute(sql, updated_values)
         self.con.commit()
+
+    def insert_timeseries(self, employee_id, time_in_stamp,time_out_stamp,year,month,day):
+        sql = "INSERT INTO TimeIn (employee_id, time_in_stamp,time_out_stamp,year,month,day) VALUES (?,?,?,?,?,?)"
+        values = (employee_id, time_in_stamp,time_out_stamp,year,month,day)
+        self.cur.execute(sql, values)
+        self.con.commit()
+
+
+
+
 
 
 # Create an instance of the Database class
