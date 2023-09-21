@@ -69,11 +69,5 @@ class Database:
         values = (employee_id, time_in_stamp,time_out_stamp,year,month,day)
         self.cur.execute(sql, values)
         self.con.commit()
-
-
-
-
-
-
 # Create an instance of the Database class
 o = Database("Employee.db")
